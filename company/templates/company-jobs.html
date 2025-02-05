@@ -1,0 +1,89 @@
+{% extends "company_home.html" %}
+{% block home %}
+{% load static %}
+
+{% comment %} <body class="bg-gray-50"> {% endcomment %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">Posted Jobs</h1>
+            {% comment %} <a href="{% url 'add_job' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                Add New Job
+            </a> {% endcomment %}
+        </div>
+
+        <div class="bg-white shadow overflow-hidden rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Designation</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vacancies</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Posted Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for job in jobs %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ job.designation }}</div>
+                            <div class="text-sm text-gray-500">{{ job.salary }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ job.department.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ job.location }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ job.vacancy }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ job.opening_date }}</div>
+                            {% if job.closing_date %}
+                            <div class="text-sm text-red-600">Closes: {{ job.closing_date }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-3">
+                                <a href="{% url 'edit_job' job.id %}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                <a href="{% url 'delete_job' job.id %}" class="text-red-600 hover:text-red-900">Delete</a>
+                                <a href="{% url 'view_applications' job.id %}" class="text-green-600 hover:text-green-900">View Applications</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            No job posts available
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if jobs.has_other_pages %}
+        <div class="mt-4 flex justify-center">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                {% if jobs.has_previous %}
+                <a href="?page={{ jobs.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Previous</a>
+                {% endif %}
+                
+                {% for num in jobs.paginator.page_range %}
+                    {% if jobs.number == num %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-50 text-sm font-medium text-indigo-600">{{ num }}</span>
+                    {% else %}
+                    <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if jobs.has_next %}
+                <a href="?page={{ jobs.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Next</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}

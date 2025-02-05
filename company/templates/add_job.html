@@ -1,0 +1,165 @@
+{% extends "company_home.html" %}
+{% block home %}
+    <style>
+        .main-contents {
+            margin-left: 10px;
+        }
+        .search-input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+
+    <div class="main-contents">
+        <div class="mb-8 mt-2">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Job Posts</h1>
+                <p class="text-gray-600 mt-2">Manage and monitor job postings</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg" style="margin:20px;">
+            <div class="p-8">
+                <!-- Header Section -->
+                <div class="flex flex-wrap items-center justify-between mb-6">
+                    <div class="relative w-full md:w-1/3 mb-4 md:mb-0">
+                        <div class="flex space-x-3">
+                            <a href="{% url 'add_job_post' %}" 
+                               class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Job Post</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Posts Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Company & Position
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Department
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Location & Vacancy
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Dates
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    CV
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for job in jobs %}
+                            <tr>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <img class="h-10 w-10 rounded-full object-cover" 
+                                                 src="{{ job.company.logo.url }}" 
+                                                 alt="{{ job.company.name }}">
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ job.post_name }}
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                {{ job.designation }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ job.company.name }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ job.department.name }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ job.location }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        Vacancies: {{ job.vacancy }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        Opening: {{ job.opening_date|date:"M d, Y" }}
+                                    </div>
+                                    {% if job.closing_date %}
+                                    <div class="text-sm text-gray-500">
+                                        Closing: {{ job.closing_date|date:"M d, Y" }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if job.cv %}
+                                    <a href="{{ job.cv.url }}" 
+                                       class="text-blue-600 hover:text-blue-900"
+                                       target="_blank">
+                                        <i class="fas fa-file-pdf fa-lg"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-3">
+                                        <a href="{% url 'edit_job_post' job.id %}" 
+                                           class="text-blue-600 hover:text-blue-900">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button onclick="deleteJob('{{ job.id }}')"
+                                                class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <a href="{% url 'view_applications' job.id %}"
+                                           class="text-green-600 hover:text-green-900"
+                                           title="View Applications">
+                                            <i class="fas fa-users"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-4">
+                    <div class="flex justify-between items-center w-full">
+                        <div class="text-sm text-gray-700">
+                            Showing <span class="font-medium">1</span> to 
+                            <span class="font-medium">10</span> of 
+                            <span class="font-medium">{{ total_jobs }}</span> results
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="#" class="px-3 py-1 border rounded-lg hover:bg-gray-50">Previous</a>
+                            <a href="#" class="px-3 py-1 border rounded-lg bg-blue-600 text-white">1</a>
+                            <a href="#" class="px-3 py-1 border rounded-lg hover:bg-gray-50">2</a>
+                            <a href="#" class="px-3 py-1 border rounded-lg hover:bg-gray-50">3</a>
+                            <a href="#" class="px-3 py-1 border rounded-lg hover:bg-gray-50">Next</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function deleteJob(jobId) {
+            if (confirm('Are you sure you want to delete this job post?')) {
+                window.location.href = `/delete-job/${jobId}/`;
+            }
+        }
+    </script>
+{% endblock %}
