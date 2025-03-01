@@ -4,7 +4,7 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Add New Job Post</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Edit Job Post</h1>
     </div>
 
     <div class="bg-white shadow overflow-hidden rounded-lg p-6">
@@ -63,7 +63,6 @@
                 <div>
                     <label for="{{ form.closing_date.id_for_label }}" class="block text-sm font-medium text-gray-700">Closing Date</label>
                     {{ form.closing_date }}
-                    <p class="text-xs text-gray-500 mt-1">Leave blank if no closing date</p>
                     {% if form.closing_date.errors %}
                     <p class="text-red-500 text-xs mt-1">{{ form.closing_date.errors.0 }}</p>
                     {% endif %}
@@ -71,11 +70,11 @@
             </div>
             
             <div class="mt-6 flex justify-end space-x-3">
-                <a href="{% url 'job_list' %}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
+                <a href="{% url 'job_list' %}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300" style="text-decoration:None;">
                     Cancel
                 </a>
                 <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    Post Job
+                    Save Changes
                 </button>
             </div>
         </form>

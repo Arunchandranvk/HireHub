@@ -6,11 +6,22 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-900">Posted Jobs</h1>
-            {% comment %} <a href="{% url 'add_job' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                Add New Job
-            </a> {% endcomment %}
+            <div class="mb-8 flex justify-between items-center">
+                {% comment %} <h1 class="text-2xl font-bold text-gray-900">Posted Jobs</h1> {% endcomment %}
+                <a href="{% url 'add_job' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700" style="text-decoration:None;">
+                    Add New Job
+                </a>
+            </div>
         </div>
-
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+            {% for message in messages %}
+            <div class="p-4 mb-4 rounded-md {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                <p class="text-sm">{{ message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="bg-white shadow overflow-hidden rounded-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">

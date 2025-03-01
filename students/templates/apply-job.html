@@ -1,0 +1,60 @@
+{% extends "student_home.html" %}
+{% load static %}
+{% block user %}
+<section class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Apply for: {{ jobpost.designation }}</h1>
+            
+            <div class="mb-6">
+                <div class="flex items-center space-x-2 mb-2">
+                    <i class="fas fa-building text-indigo-600"></i>
+                    <span class="text-gray-700">{{ jobpost.company.name }}</span>
+                </div>
+                <div class="flex items-center space-x-2 mb-2">
+                    <i class="fas fa-map-marker-alt text-indigo-600"></i>
+                    <span class="text-gray-700">{{ jobpost.location }}</span>
+                </div>
+                <div class="flex items-center space-x-2 mb-2">
+                    <i class="fas fa-users text-indigo-600"></i>
+                    <span class="text-gray-700">Department: {{ jobpost.department.name }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-rupee text-red-600"></i>
+                    <span class="text-gray-700">{{ jobpost.salary }}</span>
+                </div>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div>
+                    <label for="{{ form.cv.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Upload your CV/Resume
+                    </label>
+                    {{ form.cv }}
+                    {% if form.cv.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.cv.errors }}</p>
+                    {% endif %}
+                    <p class="text-gray-500 text-sm mt-1">Upload a PDF file (Max size: 5MB)</p>
+                </div>
+                
+                <div class="flex items-center justify-between pt-4">
+                    <a href="{% url 'jobposts' %}" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

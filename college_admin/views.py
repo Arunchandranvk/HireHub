@@ -48,7 +48,6 @@ class AddStudent(CreateView):
 
 class StudentPUTView(View): 
     template_name = 'student_edit.html'
-    
     def get(self, request, *args, **kwargs):
         id = kwargs.get('pk')
         student = get_object_or_404(Student, id=id)
@@ -278,3 +277,5 @@ class AppliedStudentsView(TemplateView):
         id=kwargs.get('pk')
         context['students'] = AppliedStudents.objects.filter(jobpost=id)
         return context
+    
+   

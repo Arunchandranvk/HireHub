@@ -55,6 +55,8 @@ class Department(models.Model):
     name = models.CharField(max_length=100)
     hod_name = models.CharField(max_length=100,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.name
 
 
 class Course(models.Model):
@@ -69,11 +71,9 @@ class Student(CustomUser):
         ("Female","Female"),
         ("Others","Others")
     )
-
     gender=models.CharField(max_length=100,choices=options,default="Male")
     dob=models.DateField(null=True)
     department=models.ForeignKey(Department,on_delete=models.CASCADE)
-    # created_at = models.date
 
     def save(self, *args, **kwargs):
         if not self.std_id:  
@@ -152,3 +152,16 @@ class TechInterview(models.Model):
     status = models.CharField(max_length=200)
     
 
+class Notification(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    link = models.CharField(max_length=255, blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return self.title

@@ -1,0 +1,207 @@
+{% extends "company_home.html" %}
+{% load static %}
+{% block home %}
+<section class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Candidate Applications</h1>
+        <p class="text-gray-600 mb-8">Manage applications for your job postings</p>
+        
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}bg-green-100 border-green-500 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-500 text-red-700{% else %}bg-blue-100 border-blue-500 text-blue-700{% endif %} border-l-4 p-4 mb-4">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Filter Controls -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Job</label>
+                    <select id="job-filter" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="all">All Jobs</option>
+                        {% for job in jobs %}
+                        <option value="{{ job.id }}">{{ job.designation }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+                    <select id="status-filter" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="inprogress">In Progress</option>
+                        <option value="selected">Selected</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search by Name</label>
+                    <input type="text" id="name-search" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Enter student name">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Applications Table -->
+        {% if applications %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Job Position
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Application Date
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Initial Round
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Technical Round
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for application in applications %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ application.student.name }} {{ application.student.user.last_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ application.student.user.email }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ application.jobpost.designation }}</div>
+                            <div class="text-sm text-gray-500">{{ application.jobpost.department.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ application.jobpost.opening_date|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if application.intial_round1 == "Pass" %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Passed
+                            </span>
+                            {% elif application.intial_round1 == "Fail" %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Failed
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Pending
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if application.tech_round2 == "Pass" %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Passed
+                            </span>
+                            {% elif application.tech_round2 == "Fail" %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Failed
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Pending
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if application.is_passed %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Selected
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                In Progress
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'candidate-detail' application.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow p-8 text-center">
+            <i class="fas fa-user-tie text-5xl text-gray-300 mb-4"></i>
+            <h2 class="text-xl font-medium text-gray-700 mb-2">No Applications Yet</h2>
+            <p class="text-gray-500 mb-6">You haven't received any applications for your job postings yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    // Simple client-side filtering
+    document.addEventListener('DOMContentLoaded', function() {
+        const jobFilter = document.getElementById('job-filter');
+        const statusFilter = document.getElementById('status-filter');
+        const nameSearch = document.getElementById('name-search');
+        const rows = document.querySelectorAll('tbody tr');
+        
+        function applyFilters() {
+            const jobValue = jobFilter.value;
+            const statusValue = statusFilter.value;
+            const nameValue = nameSearch.value.toLowerCase();
+            
+            rows.forEach(row => {
+                const jobText = row.querySelector('td:nth-child(2)').textContent;
+                const statusText = row.querySelector('td:nth-child(6)').textContent.trim().toLowerCase();
+                const nameText = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                
+                let showRow = true;
+                
+                if (jobValue !== 'all' && !jobText.includes(jobValue)) {
+                    showRow = false;
+                }
+                
+                if (statusValue !== 'all') {
+                    if (statusValue === 'selected' && !statusText.includes('selected')) {
+                        showRow = false;
+                    } else if (statusValue === 'pending' && !statusText.includes('pending')) {
+                        showRow = false;
+                    } else if (statusValue === 'inprogress' && !statusText.includes('in progress')) {
+                        showRow = false;
+                    } else if (statusValue === 'rejected' && !statusText.includes('failed')) {
+                        showRow = false;
+                    }
+                }
+                
+                if (nameValue && !nameText.includes(nameValue)) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        if (jobFilter) jobFilter.addEventListener('change', applyFilters);
+        if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+        if (nameSearch) nameSearch.addEventListener('input', applyFilters);
+    });
+</script>
+{% endblock %}
