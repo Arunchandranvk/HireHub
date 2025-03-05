@@ -1,0 +1,178 @@
+{% extends 'student_home.html' %}
+
+{% block user %}
+<div class="container mx-auto px-4 py-16">
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-8">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">
+                Question {{ question_number }} of {{ total_questions }}
+            </h2>
+        </div>
+        
+        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+            <p class="text-lg text-gray-800">{{ question }}</p>
+        </div>
+        
+        <div class="mb-6">
+            <div id="video-capture" class="bg-gray-100 rounded-lg p-4">
+                <video id="webcam" class="w-full rounded-lg" autoplay></video>
+                <div class="flex justify-between mt-4">
+                    <button id="start-recording" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        Start Recording
+                    </button>
+                    <button id="stop-recording" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600" disabled>
+                        Stop Recording
+                    </button>
+                </div>
+                <div id="recording-status" class="mt-4 text-center text-gray-600"></div>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url 'submit_answer' session.id question_number %}" id="answer-form">
+            {% csrf_token %}
+            <input type="hidden" id="student-answer" name="student_answer">
+            <input type="hidden" id="recorded-video" name="recorded_video">
+            <button type="submit" id="submit-button" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition" disabled>
+                Submit Answer
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const webcam = document.getElementById('webcam');
+    const startButton = document.getElementById('start-recording');
+    const stopButton = document.getElementById('stop-recording');
+    const submitButton = document.getElementById('submit-button');
+    const studentAnswerInput = document.getElementById('student-answer');
+    const recordedVideoInput = document.getElementById('recorded-video');
+    const recordingStatus = document.getElementById('recording-status');
+
+    let mediaRecorder;
+    let recordedChunks = [];
+    let audioContext, audioRecorder;
+    let stream;
+
+    async function initializeRecording() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            webcam.srcObject = stream;
+
+            // Audio recording setup
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new AudioContext();
+            const audioSource = audioContext.createMediaStreamSource(audioStream);
+            audioRecorder = new MediaRecorder(audioStream);
+
+            // Video recording setup
+            mediaRecorder = new MediaRecorder(stream, { 
+                mimeType: 'video/webm' 
+            });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                recordedVideoInput.value = await blobToBase64(videoBlob);
+                recordedChunks = [];
+
+                // Attempt speech recognition
+                try {
+                    const recognitionResult = await transcribeAudio(audioStream);
+                    studentAnswerInput.value = recognitionResult;
+                    submitButton.disabled = false;
+                    recordingStatus.textContent = 'Recording processed successfully';
+                } catch (error) {
+                    console.error('Speech recognition error:', error);
+                    recordingStatus.textContent = 'Unable to transcribe audio. Please try again.';
+                }
+            };
+
+            startButton.disabled = false;
+        } catch (error) {
+            console.error('Error initializing recording:', error);
+            recordingStatus.textContent = 'Error accessing camera/microphone';
+        }
+    }
+
+    // Convert blob to base64
+    function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // Attempt speech recognition
+    async function transcribeAudio(audioStream) {
+        return new Promise((resolve, reject) => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                reject('Speech recognition not supported');
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            let finalTranscript = '';
+
+            recognition.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    }
+                }
+            };
+
+            recognition.onerror = (event) => {
+                reject(`Speech recognition error: ${event.error}`);
+            };
+
+            recognition.onend = () => {
+                resolve(finalTranscript.trim());
+            };
+
+            recognition.start();
+
+            // Stop recognition after 10 seconds
+            setTimeout(() => {
+                recognition.stop();
+            }, 10000);
+        });
+    }
+
+    // Initialize recording when page loads
+    initializeRecording();
+
+    startButton.addEventListener('click', () => {
+        recordingStatus.textContent = 'Recording started...';
+        mediaRecorder.start();
+        audioRecorder.start();
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        submitButton.disabled = true;
+    });
+
+    stopButton.addEventListener('click', () => {
+        recordingStatus.textContent = 'Processing recording...';
+        mediaRecorder.stop();
+        audioRecorder.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    });
+});
+</script>
+{% endblock %}

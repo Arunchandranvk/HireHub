@@ -8,6 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="shortcut icon" type="image/icon" href="{% static 'images/main_logo.png' %}" style="border-radius: 0.75rem;">
+
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <!-- Navigation -->
@@ -26,6 +28,8 @@
                         <a href="{% url 'jobposts' %}" class="text-gray-600 hover:text-indigo-600 transition">Jobs</a>
                         <a href="{% url 'companies' %}" class="text-gray-600 hover:text-indigo-600 transition">Companies</a>
                         <a href="{% url 'applied-jobs' %}" class="text-gray-600 hover:text-indigo-600 transition">Applied Jobs</a>
+                        <a href="{% url 'mock_test_list' %}" class="text-gray-600 hover:text-indigo-600 transition">MCQ</a>
+                        <a href="{% url 'start_assessment' %}" class="text-gray-600 hover:text-indigo-600 transition">Assessment</a>
                         <a href="{% url 'student-applications' %}" class="text-gray-600 hover:text-indigo-600 transition">Notifications</a>
                     </div>
                 </div>

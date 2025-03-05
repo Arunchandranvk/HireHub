@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireHub - Company Reports</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo.webp' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <!-- Navigation (Same as Dashboard) -->
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-8">
+                    <a href="#" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z"/>
+                        </svg>
+                        <span class="text-2xl font-bold text-gray-800">HireHub</span>
+                    </a>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="{% url 'ch' %}" class="text-gray-600 hover:text-indigo-600 transition">Dashboard</a>
+                        <a href="{% url 'job_list' %}" class="text-gray-600 hover:text-indigo-600 transition">Job Postings</a>
+                        <a href="{% url 'company-candidates' %}" class="text-gray-600 hover:text-indigo-600 transition">Candidates</a>
+                        <a href="#" class="text-indigo-600 font-semibold transition">Reports</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="notificationBtn" class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-indigo-600 transition">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <img src="{{ request.user.company.logo.url }}" alt="Company Logo" class="h-8 w-8 rounded-full">
+                        <span class="text-gray-700">{{ request.user.company.name }}</span>
+                    </div>
+                    <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-gray-50 rounded-lg">
+                        <i class="fas fa-sign-out-alt w-5"></i>
+                        <span class="ml-3">Log Out</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Reports Content -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Recruitment Reports</h1>
+
+        <!-- Reports Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-600">Total Job Postings</h3>
+                    <i class="fas fa-briefcase text-indigo-600"></i>
+                </div>
+                <p class="text-3xl font-bold text-gray-800">{{ total_job_postings }}</p>
+                <p class="text-sm text-gray-600 mt-2">{{ active_job_postings }} currently active</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-600">Total Applications</h3>
+                    <i class="fas fa-users text-indigo-600"></i>
+                </div>
+                <p class="text-3xl font-bold text-gray-800">{{ total_applications }}</p>
+                <p class="text-sm text-gray-600 mt-2">{{ pass_rate }}% pass rate</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-gray-600">Interview Analytics</h3>
+                    <i class="fas fa-chart-line text-indigo-600"></i>
+                </div>
+                <p class="text-3xl font-bold text-gray-800">{{ total_interviews }}</p>
+                <p class="text-sm text-gray-600 mt-2">{{ successful_hires }} candidates hired</p>
+            </div>
+        </div>
+
+        <!-- Detailed Reports -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Job Posting Performance -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Job Posting Performance</h2>
+                <div class="space-y-4">
+                    {% for job in top_performing_jobs %}
+                    <div class="flex justify-between items-center p-4 border-b border-gray-100">
+                        <div>
+                            <h3 class="font-semibold text-gray-800">{{ job.designation }}</h3>
+                            <p class="text-sm text-gray-600">{{ job.department.name }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-indigo-600 font-bold">{{ job.applications_count }} Applications</p>
+                            <p class="text-sm text-gray-500">{{ job.hired_count }} Hired</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Candidate Funnel -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Candidate Funnel</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4 mr-2">
+                            <div class="bg-indigo-600 h-4 rounded-full" style="width: {{ initial_round_pass_rate }}%"></div>
+                        </div>
+                        <span class="text-sm text-gray-600">Initial Round: {{ initial_round_pass_rate }}%</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4 mr-2">
+                            <div class="bg-green-500 h-4 rounded-full" style="width: {{ tech_round_pass_rate }}%"></div>
+                        </div>
+                        <span class="text-sm text-gray-600">Technical Round: {{ tech_round_pass_rate }}%</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-full bg-gray-200 rounded-full h-4 mr-2">
+                            <div class="bg-blue-500 h-4 rounded-full" style="width: {{ hire_rate }}%"></div>
+                        </div>
+                        <span class="text-sm text-gray-600">Hire Rate: {{ hire_rate }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export and Filters -->
+        <div class="mt-8 flex justify-between items-center">
+            {% comment %} <div class="flex space-x-4">
+                <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option>Last 30 Days</option>
+                    <option>Last 3 Months</option>
+                    <option>This Year</option>
+                </select>
+                <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option>All Departments</option>
+                    {% for department in departments %}
+                    <option>{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </div> {% endcomment %}
+            {% comment %} <div class="flex space-x-4">
+                <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                </button>
+                <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-file-excel mr-2"></i>Export CSV
+                </button>
+            </div> {% endcomment %}
+        </div>
+    </div>
+
+    <script>
+        // Notification dropdown toggle (same as dashboard)
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function() {
+                notificationDropdown.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function(event) {
+                if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                    notificationDropdown.classList.add('hidden');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

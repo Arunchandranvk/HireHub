@@ -1,0 +1,51 @@
+
+{% extends 'student_home.html' %}
+{% block user %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Available Mock Tests</h1>
+    
+    <div class="grid md:grid-cols-3 gap-6">
+        {% for subject in subjects %}
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">{{ subject.name }}</h2>
+            <p class="text-gray-600 mb-4">{{ subject.description }}</p>
+            <a href="{% url 'start_mock_test' subject.id %}" 
+               class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition">
+                Start 
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold mb-6">Your Recent Mock Tests</h2>
+        <div class="bg-white shadow-md rounded-lg">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="p-3 text-left">Subject</th>
+                        <th class="p-3 text-left">Date</th>
+                        <th class="p-3 text-left">Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in mock_tests %}
+                    <tr class="border-b">
+                        <td class="p-3">{{ test.subject.name }}</td>
+                        <td class="p-3">{{ test.start_time|date:"M d, Y" }}</td>
+                        <td class="p-3">
+                            {% if test.score is not None %}
+                                {{ test.score|floatformat:2 }}%
+                            {% else %}
+                                Not Completed
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

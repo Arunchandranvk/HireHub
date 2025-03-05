@@ -126,6 +126,7 @@ class JobPosts(models.Model):
     salary = models.CharField(max_length=300,null=True)
     opening_date = models.DateField(auto_now_add=True)
     closing_date = models.DateField(null=True, blank=True)  # Make closing date optional if needed
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
 
     def __str__(self):
         return f"{self.designation} "
@@ -143,13 +144,14 @@ class AppliedStudents(models.Model):
     intial_round1 = models.CharField(max_length=100,choices=options, default="Pending")
     tech_round2 = models.CharField(max_length=100,choices=options, default="Pending")
     is_passed =  models.BooleanField(default=False)
+    created_at=models.DateTimeField(auto_now_add=True,null=True)
 
 
 class TechInterview(models.Model):
     applied = models.ForeignKey(AppliedStudents,on_delete=models.CASCADE,related_name='tech_applied')
-    link  = models.URLField()
-    start_time = models.DateTimeField()
-    status = models.CharField(max_length=200)
+    link  = models.URLField(null=True)
+    start_time = models.DateTimeField(null=True)
+    status = models.CharField(max_length=200,null=True)
     
 
 class Notification(models.Model):
@@ -165,3 +167,86 @@ class Notification(models.Model):
     
     def __str__(self):
         return self.title
+    
+    
+class Subject(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class Question(models.Model):
+    DIFFICULTY_CHOICES = [
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard')
+    ]
+
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    text = models.TextField()
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='medium')
+    
+    def __str__(self):
+        return self.text[:50]
+
+class Option(models.Model):
+    question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.text[:50]
+
+class MockTest(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    total_questions = models.IntegerField(default=15)
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    score = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subject.name} Mock Test"
+
+class MockTestResponse(models.Model):
+    mock_test = models.ForeignKey(MockTest, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_option = models.ForeignKey(Option, null=True, blank=True, on_delete=models.SET_NULL)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.mock_test} - {self.question}"
+
+from django.utils import timezone
+    
+class AssessmentSession(models.Model):
+    """Model to track an individual assessment session"""
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    total_questions = models.IntegerField()
+    current_question = models.TextField(blank=True, null=True)
+    current_model_answer = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.student.name}'s Assessment on {self.created_at}"
+
+class StudentAnswer(models.Model):
+    """Model to store individual student answers with optional video"""
+    session = models.ForeignKey('AssessmentSession', on_delete=models.CASCADE)
+    question = models.TextField()
+    student_answer = models.TextField()
+    model_answer = models.TextField()
+    marks = models.FloatField()
+    feedback = models.TextField()
+    answered_at = models.DateTimeField(default=timezone.now)
+    
+    # Optional video file storage
+    video_file = models.FileField(
+        upload_to='assessment_videos/', 
+        null=True, 
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Answer for {self.question[:50]}"

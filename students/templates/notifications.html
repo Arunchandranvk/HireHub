@@ -89,6 +89,17 @@
                     
                     <div class="mt-4 pt-4 border-t">
                         <div class="flex justify-between items-center">
+                            {% if interview.status == "Cancelled" %}
+                            <div>
+                                <span class="text-sm text-gray-600">Interview in</span>
+                                <span id="countdown-{{ interview.id }}" class="ml-2 font-medium text-red-600">
+                                 Cancelled
+                                </span>
+                            </div>
+                            {% comment %} <button target="_blank" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-indigo-700 transition">
+                               Cancelled
+                            </button> {% endcomment %}
+                            {% else  %}
                             <div>
                                 <span class="text-sm text-gray-600">Interview in</span>
                                 <span id="countdown-{{ interview.id }}" class="ml-2 font-medium text-indigo-600">
@@ -98,6 +109,7 @@
                             <a href="{{ interview.link }}" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
                                 Join Interview
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

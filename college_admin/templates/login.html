@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+    {% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HireHub - Authentication</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="shortcut icon" type="image/icon" href="{% static 'images/main_logo.png' %}" style="border-radius: 0.75rem;">
+
     <style>
         .alert {
     padding: 10px;
@@ -104,8 +107,8 @@
                             </div>
                              <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label class="ml-2 block text-sm text-gray-700">Remember me</label>
+                                    <!-- <input type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"> -->
+                                    <!-- <label class="ml-2 block text-sm text-gray-700">Remember me</label> -->
                                 </div>
                                 <a href="{% url 'com-reg' %}" class="text-sm text-indigo-600 hover:text-indigo-500">Is Company?</a>
                             </div> 

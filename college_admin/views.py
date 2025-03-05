@@ -86,16 +86,53 @@ def StudentDeleteView(req,pk):
     return redirect('stu')
 
 
-class CompanyRegView(SuccessMessageMixin,CreateView):
-     form_class= CompanyForm 
-     template_name="reg.html" 
-     model=Company 
-     success_url=reverse_lazy("login")  
-     success_message="Registration Successful!!"
 
-     def form_invalid(self, form):
-         messages.error(self.request,"Registration failed. Please correct the errors below!")
-         return super().form_invalid(form)
+class CompanyRegView(SuccessMessageMixin, CreateView):
+    form_class = CompanyForm
+    template_name = "reg.html"
+    model = Company
+    success_url = reverse_lazy("login")
+    success_message = "Registration Successful!!"
+    
+    def form_invalid(self, form):
+        # Display specific field errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field != '__all__':
+                    messages.error(self.request, f"{field.capitalize()}: {error}")
+                else:
+                    messages.error(self.request, f"{error}")
+        
+        # Add a general error message
+        messages.error(self.request, "Registration failed. Please correct the errors below!")
+        
+        return super().form_invalid(form)
+    
+    def form_valid(self, form):
+        # Additional validations can be added here before saving
+        
+        # Example validation for phone number format
+        phone = form.cleaned_data.get('phone')
+        if phone and not self.is_valid_phone_number(phone):
+            form.add_error('phone', 'Please enter a valid phone number.')
+            return self.form_invalid(form)
+        
+        # Example validation for website URL
+        site_url = form.cleaned_data.get('site_url')
+        if site_url and not site_url.startswith(('http://', 'https://')):
+            form.add_error('site_url', 'Website URL must start with http:// or https://')
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+    
+    def is_valid_phone_number(self, phone):
+        """
+        Basic validation for phone number format
+        """
+        import re
+        # This is a simple pattern - customize as needed for your requirements
+        pattern = re.compile(r'^\+?[0-9]{10,15}$')
+        return bool(pattern.match(phone))
 
 
 

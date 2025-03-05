@@ -5,11 +5,59 @@ from college_admin.forms import *
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.contrib.auth.mixins import LoginRequiredMixin
+from datetime import timedelta
 # Create your views here.
 
 
-class ComanyHome(TemplateView):
+class CompanyHome(TemplateView):
     template_name = 'company_home.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = self.request.user.company
+        now = timezone.now()
+        one_week_ago = now - timedelta(days=7)
+        
+        # Active Jobs Count
+        active_jobs = JobPosts.objects.filter(
+            company=company,
+            closing_date__gte=now.date()
+        )
+        context['active_jobs_count'] = active_jobs.count()
+        
+        # Latest closing date
+        if active_jobs.exists():
+            context['latest_closing_date'] = active_jobs.order_by('closing_date').first().closing_date
+        
+        # Applications statistics
+        applications = AppliedStudents.objects.filter(
+            jobpost__company=company
+        )
+        context['total_applications'] = applications.count()
+        context['new_applications'] = applications.filter(
+            jobpost__opening_date__gte=one_week_ago.date()
+        ).count()
+        
+        # Recent applications (limit to 5)
+        context['recent_applications'] = applications.order_by('-jobpost__opening_date')[:2]
+        
+        # Interviews data
+        interviews = TechInterview.objects.filter(
+            applied__jobpost__company=company,
+            start_time__gte=now
+        ).order_by('start_time')
+        
+        context['scheduled_interviews_count'] = interviews.count()
+        context['upcoming_interviews'] = interviews[:1]  # Limit to 3
+        if interviews.exists():
+            context['next_interview'] = interviews.first()
+        
+        # Notifications
+        notifications = Notification.objects.filter(user=self.request.user)
+        context['notifications'] = notifications[:10]  # Limit to 10 most recent
+        context['unread_notifications_count'] = notifications.filter(is_read=False).count()
+        
+        return context
 
 
 def add_job(request):
@@ -77,7 +125,13 @@ def view_applications(request, job_id):
 def update_application_status(request, application_id):
     """View for updating the status of a job application"""
     application = get_object_or_404(AppliedStudents, id=application_id, jobpost__company=request.user.company)
-    
+    Notification.objects.create(
+            user=application.student,
+            title=" Interview Update",
+            message=f"Your  interview for {application.jobpost.designation} at {application.jobpost.company.name} "
+                    f"Status has been updated",
+            # link=interview.link
+        )
     if request.method == 'POST':
         form = ApplicationStatusForm(request.POST, instance=application)
         if form.is_valid():
@@ -107,7 +161,7 @@ class CompanyCandidatesView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         company = get_object_or_404(Company, id=self.request.user.id)
         context['company'] = company
-        context['jobs'] = JobPosts.objects.filter(company=company)
+        context['jobs'] = JobPosts.objects.filter(company=company).order_by('-created_at')
         return context
 
 
@@ -136,10 +190,16 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
  
-class ScheduleTechInterviewView(LoginRequiredMixin, CreateView):
+class ScheduleTechInterviewView(LoginRequiredMixin, UpdateView):
     model = TechInterview
-    form_class = TechInterviewForm  # Use the custom form
+    form_class = TechInterviewForm
     template_name = 'schedule-interview.html'
+
+    def get_object(self, queryset=None):
+        application_id = self.kwargs.get('application_id')
+        application = get_object_or_404(AppliedStudents, id=application_id)
+        interview, created = TechInterview.objects.get_or_create(applied=application)
+        return interview  # This ensures the form loads existing data if available
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -150,48 +210,48 @@ class ScheduleTechInterviewView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         application_id = self.kwargs.get('application_id')
         application = get_object_or_404(AppliedStudents, id=application_id)
-
-        # Ensure the company owns this job application
+        
+        # Ensure the logged-in company owns this job application
         company = get_object_or_404(Company, id=self.request.user.id)
         if application.jobpost.company != company:
-            messages.error(self.request, "You don't have permission to schedule an interview for this application.")
+            messages.error(self.request, "You don't have permission to edit this interview.")
             return redirect('company-candidates')
 
-        form.instance.applied = application
-        
+        form.instance.applied = application  # Ensure the form is linked to the application
         interview = form.save()
+
         formatted_date = interview.start_time.strftime('%B %d, %Y')
         formatted_time = interview.start_time.strftime('%I:%M %p')
+
+        # Notify the student
         Notification.objects.create(
-            user=application.student.user,
-            title=f"Technical Interview Scheduled",
-            message=f"A technical interview has been scheduled for {application.jobpost.designation} " 
-                    f"at {application.jobpost.company.name} on {formatted_date} at {formatted_time}.",
+            user=application.student,
+            title="Technical Interview Update",
+            message=f"Your technical interview for {application.jobpost.designation} at {application.jobpost.company.name} "
+                    f"has been updated. The new schedule is {formatted_date} at {formatted_time}.",
             link=interview.link
         )
+
+        # Send email notification
         
-        # Send email notification to student
         student_email = application.student.email
-        job_title = application.jobpost.designation
-        company_name = company.name
-        
-        email_subject = f"Interview Scheduled for {job_title} at {company_name}"
+        email_subject = f"Updated Interview Schedule for {application.jobpost.designation} at {company.name}"
         email_message = f"""
         Dear {application.student.name},
-        
-        Your technical interview for the position of {job_title} at {company_name} has been scheduled.
-        
-        Interview Details:
+
+        Your technical interview for the position of {application.jobpost.designation} at {company.name} has been updated.
+
+        New Interview Details:
         Date: {formatted_date}
         Time: {formatted_time}
         Link: {interview.link}
-        
-        Please make sure you're prepared and online a few minutes before the scheduled time.
-        
+
+        Please ensure you're available at the updated time.
+
         Best regards,
-        {company_name} Recruitment Team
+        {company.name} Recruitment Team
         """
-        
+
         try:
             send_mail(
                 email_subject,
@@ -200,16 +260,88 @@ class ScheduleTechInterviewView(LoginRequiredMixin, CreateView):
                 [student_email],
                 fail_silently=False,
             )
-            messages.success(self.request, "Interview scheduled and notification sent successfully.")
+            messages.success(self.request, "Interview updated and notification sent successfully.")
         except Exception as e:
-            messages.warning(self.request, f"Interview scheduled but notification email failed to send. Error: {str(e)}")
-            
-        messages.success(self.request, "Technical interview scheduled successfully.")
+            messages.warning(self.request, f"Interview updated, but email notification failed: {str(e)}")
+
         return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('candidate-detail', kwargs={'pk': self.kwargs.get('application_id')})
 
+
+@login_required
+def edit_technical_interview(request, pk):
+    # Get the specific tech interview
+    tech_interview = get_object_or_404(TechInterview, pk=pk)
+    application = tech_interview.applied
+    company = get_object_or_404(Company, id=request.user.id)
+    
+   
+    
+    if request.method == 'POST':
+        form = TechInterviewForm(request.POST, instance=tech_interview)
+        if form.is_valid():
+            tech_interview = form.save(commit=False)
+            tech_interview.save()
+            formatted_date = tech_interview.start_time.strftime('%B %d, %Y')
+            formatted_time = tech_interview.start_time.strftime('%I:%M %p')
+            # Send email notification to student about rescheduling
+            Notification.objects.create(
+                user=application.student,
+                title="Technical Interview Update",
+                message=f"Your technical interview for {application.jobpost.designation} at {application.jobpost.company.name} "
+                        f"has been updated. The new schedule is {formatted_date} at {formatted_time}.",
+                link=tech_interview.link
+            )
+            student_email = application.student.email
+            job_title = application.jobpost.designation
+            company_name = company.name
+            
+            email_subject = f"Interview Details Updated for {job_title} at {company_name}"
+            email_message = f"""
+            Dear {application.student.name},
+            
+            The details for your technical interview for the position of {job_title} at {company_name} have been updated.
+            
+            Updated Interview Details:
+            Date & Time: {tech_interview.start_time.strftime('%Y-%m-%d %H:%M')}
+            Link: {tech_interview.link}
+            Status: {tech_interview.status}
+            
+            Please make sure you're prepared and online a few minutes before the scheduled time.
+            
+            Best regards,
+            {company_name} Recruitment Team
+            """
+            
+            try:
+                send_mail(
+                    email_subject,
+                    email_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [student_email],
+                    fail_silently=False,
+                )
+                messages.success(request, "Interview details updated and notification sent successfully.")
+            except Exception as e:
+                messages.warning(request, f"Interview updated but notification email failed to send. Error: {str(e)}")
+            
+            return redirect('candidate-detail', pk=application.pk)
+    else:
+        form = TechInterviewForm(instance=tech_interview)
+    
+    context = {
+        'form': form,
+        'application': application,
+        'data': {
+            'link': tech_interview.link,
+            'start_time': tech_interview.start_time,
+            'status': tech_interview.status
+        }
+    }
+    
+    return render(request, 'edit_technical_interview.html', context)
 
 @login_required
 def resend_interview_notification(request, pk):
@@ -273,3 +405,156 @@ def resend_interview_notification(request, pk):
     
     return redirect('candidate-detail', pk=pk) 
 
+
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import TruncMonth
+
+@login_required
+def company_reports(request):
+    # Get the current company
+    company = request.user.company
+
+    # Total Job Postings
+    total_job_postings = JobPosts.objects.filter(company=company).count()
+    active_job_postings = JobPosts.objects.filter(
+        company=company, 
+        closing_date__gte=timezone.now().date()
+    ).count()
+
+    # Total Applications
+    total_applications = AppliedStudents.objects.filter(
+        jobpost__company=company
+    ).count()
+
+    # Calculate pass rates
+    total_initial_rounds = AppliedStudents.objects.filter(jobpost__company=company).count()
+    passed_initial_rounds = AppliedStudents.objects.filter(
+        jobpost__company=company, 
+        intial_round1='Pass'
+    ).count()
+    initial_round_pass_rate = round((passed_initial_rounds / total_initial_rounds) * 100, 2) if total_initial_rounds > 0 else 0
+
+    total_tech_rounds = AppliedStudents.objects.filter(jobpost__company=company).count()
+    passed_tech_rounds = AppliedStudents.objects.filter(
+        jobpost__company=company, 
+        tech_round2='Pass'
+    ).count()
+    tech_round_pass_rate = round((passed_tech_rounds / total_tech_rounds) * 100, 2) if total_tech_rounds > 0 else 0
+
+    # Interviews and Hires
+    total_interviews = TechInterview.objects.filter(
+        applied__jobpost__company=company
+    ).count()
+    successful_hires = AppliedStudents.objects.filter(
+        jobpost__company=company,
+        intial_round1='Pass',
+        tech_round2='Pass',
+        is_passed=True
+    ).count()
+
+    # Calculate overall pass rate
+    pass_rate = round((successful_hires / total_applications) * 100, 2) if total_applications > 0 else 0
+
+    # Top Performing Jobs
+    top_performing_jobs = JobPosts.objects.filter(company=company).annotate(
+        applications_count=Count('job_stuu'),
+        hired_count=Count('job_stuu', filter=Q(
+            job_stuu__intial_round1='Pass', 
+            job_stuu__tech_round2='Pass',
+            job_stuu__is_passed=True
+        ))
+    ).order_by('-applications_count')[:5]
+
+    # Hire Rate
+    hire_rate = round((successful_hires / total_applications) * 100, 2) if total_applications > 0 else 0
+
+    # Departments
+    departments = Department.objects.all()
+
+    context = {
+        'total_job_postings': total_job_postings,
+        'active_job_postings': active_job_postings,
+        'total_applications': total_applications,
+        'pass_rate': pass_rate,
+        'total_interviews': total_interviews,
+        'successful_hires': successful_hires,
+        'top_performing_jobs': top_performing_jobs,
+        'initial_round_pass_rate': initial_round_pass_rate,
+        'tech_round_pass_rate': tech_round_pass_rate,
+        'hire_rate': hire_rate,
+        'departments': departments,
+        # 'unread_notifications_count': get_unread_notifications_count(request.user)  # Assuming you have this function
+    }
+
+    return render(request, 'reports.html', context)
+
+def export_reports_pdf(request):
+    """
+    Export reports to PDF
+    Requires additional libraries like reportlab or xhtml2pdf
+    """
+    # Implementation for PDF export
+    pass
+
+def export_reports_csv(request):
+    """
+    Export reports to CSV
+    Uses Django's built-in CSV response
+    """
+    import csv
+    from django.http import HttpResponse
+
+    # Get the company
+    company = request.user.company
+
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{company.name}_recruitment_report.csv"'
+
+    # Create a CSV writer
+    writer = csv.writer(response)
+    
+    # Write headers
+    writer.writerow([
+        'Metric', 'Value'
+    ])
+
+    # Write report data
+    writer.writerow(['Total Job Postings', JobPosts.objects.filter(company=company).count()])
+    writer.writerow(['Active Job Postings', JobPosts.objects.filter(company=company, closing_date__gte=timezone.now().date()).count()])
+    writer.writerow(['Total Applications', AppliedStudents.objects.filter(jobpost__company=company).count()])
+    
+    # More metrics can be added here
+
+    return response
+
+def advanced_analytics(request):
+    """
+    More advanced analytics and trend analysis
+    """
+    company = request.user.company
+
+    # Monthly application trends
+    monthly_applications = AppliedStudents.objects.filter(
+        jobpost__company=company
+    ).annotate(
+        month=TruncMonth('jobpost__opening_date')
+    ).values('month').annotate(
+        application_count=Count('id')
+    ).order_by('month')
+
+    # Department-wise hiring statistics
+    department_hiring = JobPosts.objects.filter(company=company).annotate(
+        total_applications=Count('job_stuu'),
+        hired_applications=Count('job_stuu', filter=Q(
+            job_stuu__intial_round1='Pass', 
+            job_stuu__tech_round2='Pass'
+        ))
+    ).values('department__name', 'total_applications', 'hired_applications')
+
+    context = {
+        'monthly_applications': list(monthly_applications),
+        'department_hiring': list(department_hiring)
+    }
+
+    return render(request, 'advanced_analytics.html', context)

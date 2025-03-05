@@ -1,0 +1,34 @@
+{% extends 'student_home.html' %}
+
+{% block user %}
+<div class="container mx-auto px-4 py-16">
+    <a href="{% url 'assessment_history' %}">History</a>
+    <div class="max-w-md mx-auto bg-white shadow-lg rounded-xl p-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">
+            Start Assessment
+        </h2>
+        
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="{{ form.num_questions.id_for_label }}" class="block text-gray-700 font-bold mb-2">
+                    Number of Questions
+                </label>
+                {{ form.num_questions }}
+                {% if form.num_questions.errors %}
+                    <p class="text-red-500 text-sm mt-1">
+                        {% for error in form.num_questions.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </p>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                Start Assessment
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

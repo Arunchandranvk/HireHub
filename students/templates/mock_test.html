@@ -1,0 +1,37 @@
+
+<!-- mock_test.html -->
+{% extends 'student_home.html' %}
+{% block user %}
+<div class="container mx-auto px-4 py-8">
+    <form method="post" action="{% url 'submit_mock_test' mock_test.id %}">
+        {% csrf_token %}
+        <div class="bg-white shadow-lg rounded-lg p-8">
+            <h1 class="text-2xl font-bold mb-6">{{ mock_test.subject.name }} Mock Test</h1>
+            
+            {% for question in questions %}
+            <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">{{ forloop.counter }}. {{ question.text }}</h3>
+                
+                <div class="space-y-3">
+                    {% for option in question.options %}
+                    <label class="block">
+                        <input type="radio" 
+                               name="question_{{ question.id }}" 
+                               value="{{ option.id }}" 
+                               class="mr-2"
+                               required>
+                        {{ option.text }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <button type="submit" 
+                    class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition">
+                Submit Mock Test
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

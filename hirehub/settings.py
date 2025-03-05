@@ -132,5 +132,18 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # or your email provider
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'sumodkanthcs@gmail.com'
-EMAIL_HOST_PASSWORD = 'khqy sxno eswk dynu'
+EMAIL_HOST_USER = "jipsongeorge753@gmail.com"
+EMAIL_HOST_PASSWORD = "oyhzlplyolihopys"
+
+
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
+
+# Configure file upload handler
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
+# Optional: Increase the default request timeout
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

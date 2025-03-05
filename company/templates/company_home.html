@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo.webp' %}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-   
+    <link rel="shortcut icon" type="image/icon" href="{% static 'images/main_logo.png' %}" style="border-radius: 0.75rem;">
 
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -27,17 +27,23 @@
                         <a href="{% url 'ch' %}" class="text-gray-600 hover:text-indigo-600 transition">Dashboard</a>
                         <a href="{% url 'job_list' %}" class="text-gray-600 hover:text-indigo-600 transition">Job Postings</a>
                         <a href="{% url 'company-candidates' %}" class="text-gray-600 hover:text-indigo-600 transition">Candidates</a>
-                        <a href="#" class="text-gray-600 hover:text-indigo-600 transition">Reports</a>
+                        <a href="{% url 'company-reports' %}" class="text-gray-600 hover:text-indigo-600 transition">Reports</a>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    {% comment %} <button class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-indigo-600 transition">
-                        <i class="fas fa-bell"></i>
-                        <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-                    </button> {% endcomment %}
+                    <!-- <div class="relative">
+                        <button id="notificationBtn" class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-indigo-600 transition">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                    </div> -->
                     <div class="flex items-center space-x-2">
-                        <img src="{{request.user.company.logo.url}}" alt="Company Logo" class="h-8 w-8 rounded-full">
-                        <span class="text-gray-700">{{request.user.company.name}}</span>
+                        <img src="{{ request.user.company.logo.url }}" alt="Company Logo" class="h-8 w-8 rounded-full">
+                        <span class="text-gray-700">{{ request.user.company.name }}</span>
                     </div>
                     <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-gray-50 rounded-lg">
                         <i class="fas fa-sign-out-alt w-5"></i>
@@ -56,26 +62,29 @@
                     <h3 class="text-gray-600">Active Jobs</h3>
                     <i class="fas fa-briefcase text-indigo-600"></i>
                 </div>
-                <p class="text-3xl font-bold text-gray-800">12</p>
-                {% comment %} <p class="text-sm text-green-600 mt-2">↑ 2 new this week</p> {% endcomment %}
+                <p class="text-3xl font-bold text-gray-800">{{ active_jobs_count }}</p>
+                <p class="text-sm text-gray-600 mt-2">Latest closing: {{ latest_closing_date|default:"No closing date" }}</p>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-600">Total Applications</h3>
                     <i class="fas fa-users text-indigo-600"></i>
                 </div>
-                <p class="text-3xl font-bold text-gray-800">247</p>
-                {% comment %} <p class="text-sm text-green-600 mt-2">↑ 18 new today</p> {% endcomment %}
+                <p class="text-3xl font-bold text-gray-800">{{ total_applications }}</p>
+                <p class="text-sm text-gray-600 mt-2">{{ new_applications }} new this week</p>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-gray-600">Interviews Scheduled</h3>
                     <i class="fas fa-calendar text-indigo-600"></i>
                 </div>
-                <p class="text-3xl font-bold text-gray-800">8</p>
-                {% comment %} <p class="text-sm text-gray-600 mt-2">Next: Today at 2 PM</p> {% endcomment %}
+                <p class="text-3xl font-bold text-gray-800">{{ scheduled_interviews_count }}</p>
+                {% if next_interview %}
+                    <p class="text-sm text-gray-600 mt-2">Next: {{ next_interview.start_time|date:"F j, P" }}</p>
+                {% else %}
+                    <p class="text-sm text-gray-600 mt-2">No upcoming interviews</p>
+                {% endif %}
             </div>
-           
         </div>
         
         <!-- Main Content Area -->
@@ -85,35 +94,38 @@
                 <div class="bg-white rounded-xl shadow-lg p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">Recent Applications</h2>
-                        <button class="text-indigo-600 hover:text-indigo-700 transition">View All</button>
+                        <a href="{% url 'company-candidates' %}" class="text-indigo-600 hover:text-indigo-700 transition">View All</a>
                     </div>
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
-                            <div class="flex items-center space-x-4">
-                                <img src="/api/placeholder/40/40" alt="Candidate" class="rounded-full">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Sarah Johnson</h3>
-                                    <p class="text-gray-600">Software Developer</p>
+                        {% if recent_applications %}
+                            {% for application in recent_applications %}
+                            <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                                <div class="flex items-center space-x-4">
+                                    <img src="{{ application.student.img.url|default:'/api/placeholder/40/40' }}" alt="Candidate" class="h-10 w-10 rounded-full">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">{{ application.student.name }}</h3>
+                                        <p class="text-gray-600">{{ application.jobpost.designation }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    {% if application.intial_round1 == "Pending" %}
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">New</span>
+                                    {% elif application.intial_round1 == "Pass" and application.tech_round2 == "Pending" %}
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">Round 1 Passed</span>
+                                    {% elif application.intial_round1 == "Pass" and application.tech_round2 == "Pass" %}
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Qualified</span>
+                                    {% elif application.intial_round1 == "Fail" or application.tech_round2 == "Fail" %}
+                                        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">Rejected</span>
+                                    {% endif %}
+                                    <a href="{% url 'view_applications' application.id %}" class="text-gray-400 hover:text-indigo-600">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">New</span>
-                                <button class="text-gray-400 hover:text-indigo-600"><i class="fas fa-chevron-right"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
-                            <div class="flex items-center space-x-4">
-                                <img src="/api/placeholder/40/40" alt="Candidate" class="rounded-full">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Michael Chen</h3>
-                                    <p class="text-gray-600">Product Manager</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">Review</span>
-                                <button class="text-gray-400 hover:text-indigo-600"><i class="fas fa-chevron-right"></i></button>
-                            </div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4 text-gray-500">No recent applications</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -122,51 +134,63 @@
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-6">Upcoming Interviews</h2>
                 <div class="space-y-4">
-                    <div class="p-4 border border-gray-100 rounded-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-semibold text-gray-800">Technical Interview</h3>
-                            <span class="text-sm text-gray-500">2:00 PM</span>
+                    {% if upcoming_interviews %}
+                        {% for interview in upcoming_interviews %}
+                        <div class="p-4 border border-gray-100 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold text-gray-800">
+                                    {% if interview.applied.tech_round2 == "Pending" %}
+                                        Technical Interview
+                                    {% else %}
+                                        Initial Round
+                                    {% endif %}
+                                </h3>
+                                <span class="text-sm text-gray-500">{{ interview.start_time|date:"g:i A" }}</span>
+                            </div>
+                            <p class="text-gray-600 mb-2">{{ interview.applied.student.name }} - {{ interview.applied.jobpost.designation }}</p>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <i class="fas fa-video text-indigo-600"></i>
+                                <a href="{{ interview.link }}" target="_blank" class="text-indigo-600 hover:underline">Join Meeting</a>
+                            </div>
                         </div>
-                        <p class="text-gray-600 mb-2">Alex Rivera - Frontend Developer</p>
-                        <div class="flex items-center space-x-2 text-sm">
-                            <i class="fas fa-video text-indigo-600"></i>
-                            <span class="text-gray-600">Virtual Meeting</span>
-                        </div>
-                    </div>
-                    <div class="p-4 border border-gray-100 rounded-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-semibold text-gray-800">Final Round</h3>
-                            <span class="text-sm text-gray-500">4:30 PM</span>
-                        </div>
-                        <p class="text-gray-600 mb-2">Emily Watson - UX Designer</p>
-                        <div class="flex items-center space-x-2 text-sm">
-                            <i class="fas fa-building text-indigo-600"></i>
-                            <span class="text-gray-600">On-site</span>
-                        </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-gray-500">No upcoming interviews scheduled</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-            <button class="flex items-center justify-center space-x-2 p-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+            <a href="{% url 'add_job' %}" class="flex items-center justify-center space-x-2 p-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
                 <i class="fas fa-plus"></i>
                 <span>Post New Job</span>
-            </button>
-            <button class="flex items-center justify-center space-x-2 p-4 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
+            </a>
+            <a href="{% url 'company-candidates' %}" class="flex items-center justify-center space-x-2 p-4 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
                 <i class="fas fa-search"></i>
                 <span>Search Candidates</span>
-            </button>
-            <button class="flex items-center justify-center space-x-2 p-4 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
-                <i class="fas fa-calendar-plus"></i>
-                <span>Schedule Interview</span>
-            </button>
-            <button class="flex items-center justify-center space-x-2 p-4 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
-                <i class="fas fa-file-alt"></i>
-                <span>Generate Report</span>
-            </button>
+            </a>
+      
         </div>
-        
     </div>
+
+    <script>
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function() {
+                notificationDropdown.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                    notificationDropdown.classList.add('hidden');
+                }
+            });
+        }
+    </script>
     {% endblock %}
 </body>
 </html>

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +7,8 @@
     <title>HireHub - Authentication</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="shortcut icon" type="image/icon" href="{% static 'images/main_logo.png' %}" style="border-radius: 0.75rem;">
+
 </head>
 <body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen">
     <!-- Navigation -->
@@ -34,7 +37,7 @@
                         <!-- Login Form -->
                         <form class="space-y-6" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
-                            {{form.errors}}
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
@@ -94,7 +97,7 @@
             </div>
         </div>
     </div>
-    {% comment %} {% if messages %}
+     {% if messages %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         {% for message in messages %}
@@ -102,6 +105,6 @@
         {% endfor %}
     });
 </script>
-{% endif %} {% endcomment %}
+{% endif %} 
 </body>
 </html>

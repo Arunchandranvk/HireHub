@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireHub - Advanced Analytics</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo.webp' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-8">
+                    <a href="#" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z"/>
+                        </svg>
+                        <span class="text-2xl font-bold text-gray-800">HireHub</span>
+                    </a>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="{% url 'dashboard' %}" class="text-gray-600 hover:text-indigo-600 transition">Dashboard</a>
+                        <a href="{% url 'job_list' %}" class="text-gray-600 hover:text-indigo-600 transition">Job Postings</a>
+                        <a href="{% url 'company-candidates' %}" class="text-gray-600 hover:text-indigo-600 transition">Candidates</a>
+                        <a href="{% url 'company-reports' %}" class="text-gray-600 hover:text-indigo-600 transition">Reports</a>
+                        <a href="{% url 'advanced-analytics' %}" class="text-indigo-600 font-semibold transition">Advanced Analytics</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="notificationBtn" class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-indigo-600 transition">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <img src="{{ request.user.company.logo.url }}" alt="Company Logo" class="h-8 w-8 rounded-full">
+                        <span class="text-gray-700">{{ request.user.company.name }}</span>
+                    </div>
+                    <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-gray-50 rounded-lg">
+                        <i class="fas fa-sign-out-alt w-5"></i>
+                        <span class="ml-3">Log Out</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Advanced Analytics Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Advanced Recruitment Analytics</h1>
+            <div class="flex space-x-4">
+                <select id="timeRangeFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="30">Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="365">Last Year</option>
+                </select>
+                <select id="departmentFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <option value="">All Departments</option>
+                    {% for department in departments %}
+                    <option value="{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Department Hiring Performance -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Department Hiring Performance</h2>
+                <canvas id="departmentHiringChart" class="w-full h-64"></canvas>
+            </div>
+
+            <!-- Candidate Source Analysis -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Candidate Source Analysis</h2>
+                <canvas id="candidateSourceChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Performance Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Interview Performance -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Interview Performance</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">First Round Pass Rate</span>
+                        <span class="font-bold text-indigo-600">{{ first_round_pass_rate }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Technical Round Pass Rate</span>
+                        <span class="font-bold text-green-600">{{ tech_round_pass_rate }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Final Hire Rate</span>
+                        <span class="font-bold text-blue-600">{{ final_hire_rate }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time to Hire Analysis -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Time to Hire</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Average Days to First Interview</span>
+                        <span class="font-bold text-indigo-600">{{ avg_days_to_first_interview }} days</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Average Days to Offer</span>
+                        <span class="font-bold text-green-600">{{ avg_days_to_offer }} days</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Fastest Hire</span>
+                        <span class="font-bold text-blue-600">{{ fastest_hire_days }} days</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diversity and Inclusion -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Diversity Insights</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Gender Diversity</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-blue-600">{{ male_candidates }}% Male</span>
+                            <span class="text-pink-600">{{ female_candidates }}% Female</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Ethnicity Representation</span>
+                        <span class="font-bold text-green-600">{{ ethnic_diversity_rate }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Diverse Hires</span>
+                        <span class="font-bold text-indigo-600">{{ diverse_hires_rate }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Department Hiring Performance Chart
+        const departmentHiringChart = document.getElementById('departmentHiringChart');
+        const departmentLabels = {{ department_hiring_labels|safe }};
+        const departmentApplications = {{ department_hiring_applications|safe }};
+        const departmentHires = {{ department_hiring_hires|safe }};
+
+        new Chart(departmentHiringChart, {
+            type: 'bar',
+            data: {
+                labels: departmentLabels,
+                datasets: [
+                    {
+                        label: 'Applications',
+                        data: departmentApplications,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    },
+                    {
+                        label: 'Hires',
+                        data: departmentHires,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Candidate Source Chart
+        const candidateSourceChart = document.getElementById('candidateSourceChart');
+        const sourceLabels = {{ candidate_source_labels|safe }};
+        const sourceData = {{ candidate_source_data|safe }};
+
+        new Chart(candidateSourceChart, {
+            type: 'pie',
+            data: {
+                labels: sourceLabels,
+                datasets: [{
+                    data: sourceData,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+
+        // Filter event listeners
+        document.getElementById('timeRangeFilter').addEventListener('change', function() {
+            const timeRange = this.value;
+            const department = document.getElementById('departmentFilter').value;
+            
+            // Implement AJAX call to update charts based on filters
+            // This would require additional JavaScript and backend endpoint
+            console.log(`Filtering with time range: ${timeRange}, department: ${department}`);
+        });
+
+        document.getElementById('departmentFilter').addEventListener('change', function() {
+            const timeRange = document.getElementById('timeRangeFilter').value;
+            const department = this.value;
+            
+            // Implement AJAX call to update charts based on filters
+            console.log(`Filtering with time range: ${timeRange}, department: ${department}`);
+        });
+    </script>
+</body>
+</html>

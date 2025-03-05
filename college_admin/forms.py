@@ -18,13 +18,52 @@ class DepartmentForm(forms.ModelForm):
         fields = '__all__'
 
     
-
+import re
 
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
         fields = '__all__'
-
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and len(name) < 2:
+            raise forms.ValidationError("Name must be at least 2 characters long.")
+        return name
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Check if email already exists
+        if Company.objects.filter(email=email).exists():
+            raise forms.ValidationError("This email is already registered.")
+        return email
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            # Validate password strength
+            if len(password) < 8:
+                raise forms.ValidationError("Password must be at least 8 characters long.")
+            if not re.search(r'[A-Z]', password):
+                raise forms.ValidationError("Password must contain at least one uppercase letter.")
+            if not re.search(r'[a-z]', password):
+                raise forms.ValidationError("Password must contain at least one lowercase letter.")
+            if not re.search(r'[0-9]', password):
+                raise forms.ValidationError("Password must contain at least one digit.")
+        return password
+    
+    def clean_logo(self):
+        logo = self.cleaned_data.get('logo')
+        if logo:
+            # Validate file size (limit to 5MB)
+            if logo.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("Logo file size must be less than 5MB.")
+            
+            # Validate file extension
+            valid_extensions = ['jpg', 'jpeg', 'png', 'gif']
+            ext = logo.name.split('.')[-1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(f"Logo must be in one of the following formats: {', '.join(valid_extensions)}")
+        return logo
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.is_company = True  
@@ -70,3 +109,17 @@ class TechInterviewForm(forms.ModelForm):
                 'class': 'block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
             }),
         }
+        
+        
+
+class AssessmentConfigForm(forms.Form):
+    """Form for configuring assessment parameters"""
+    num_questions = forms.IntegerField(
+        label='Number of Questions',
+        min_value=1,
+        max_value=10,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter number of questions (1-10)'
+        })
+    )
