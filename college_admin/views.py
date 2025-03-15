@@ -113,7 +113,7 @@ class CompanyRegView(SuccessMessageMixin, CreateView):
         
         # Example validation for phone number format
         phone = form.cleaned_data.get('phone')
-        if phone and not self.is_valid_phone_number(phone):
+        if phone :
             form.add_error('phone', 'Please enter a valid phone number.')
             return self.form_invalid(form)
         
@@ -125,14 +125,14 @@ class CompanyRegView(SuccessMessageMixin, CreateView):
         
         return super().form_valid(form)
     
-    def is_valid_phone_number(self, phone):
-        """
-        Basic validation for phone number format
-        """
-        import re
-        # This is a simple pattern - customize as needed for your requirements
-        pattern = re.compile(r'^\+?[0-9]{10,15}$')
-        return bool(pattern.match(phone))
+    # def is_valid_phone_number(self, phone):
+    #     """
+    #     Basic validation for phone number format
+    #     """
+    #     import re
+    #     # This is a simple pattern - customize as needed for your requirements
+    #     pattern = re.compile(r'^\+?[0-9]{10,15}$')
+    #     return bool(pattern.match(phone))
 
 
 

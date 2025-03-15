@@ -26,7 +26,7 @@ class GroqAssessment:
                 temperature=0.7
             )
 
-            raw_response = completion.choices[0].message.content.strip()  # Strip spaces/newlines
+            raw_response = completion.choices[0].message.content.strip()  
             print(f"Raw response: {raw_response}")  # Debugging
 
             # Fix: Ensure JSON formatting is clean before parsing
@@ -49,17 +49,18 @@ class GroqAssessment:
             )
 
     def evaluate_answer(self, model_answer: str, student_answer: str) -> Tuple[float, str]:
+        print("---------",student_answer)
         prompt = (
-            "Evaluate the student's answer compared to the model answer. "
+            "Evaluate the student's answer compared to the model answer give score based on the student answer and question , model answer. "
             "Provide JSON output with:\n"
-            '- "score" (0-100),\n'
+            '- "score":0-100,\n'
             '- "detailed_feedback" (string),\n'
             '- "missed_concepts" (list of strings).\n\n'
             "Example:\n"
             '{\n  "score": 80,\n  "detailed_feedback": "Good answer, but missing details on scope.",\n  "missed_concepts": ["variable scope"] \n}'
             f"\n\nModel Answer: {model_answer}\nStudent Answer: {student_answer}"
         )
-
+        print("prompt",prompt)
         try:
             completion = self.client.chat.completions.create(
                 model="mixtral-8x7b-32768",
@@ -76,6 +77,7 @@ class GroqAssessment:
             cleaned_response = raw_response.replace("\n", " ").replace("\r", "")
 
             evaluation = json.loads(cleaned_response)
+            print('eee',evaluation)
             feedback = f"\nFeedback:\n{evaluation['detailed_feedback']}"
 
             if evaluation.get("missed_concepts"):

@@ -201,7 +201,6 @@ def mark_all_read(request):
 def start_mock_test(request, subject_id):
     subject = Subject.objects.get(id=subject_id)
     
-    # Get 15 random questions for the subject (mix of difficulties)
     questions = list(Question.objects.filter(subject=subject).annotate(
         option_count=Count('options')
     ).filter(option_count__gt=1))
@@ -365,10 +364,10 @@ class SubmitAnswerView(LoginRequiredMixin, View):
             # Handle video upload
             video_data = request.POST.get('video_data', '')
             student_answer = request.POST.get('student_answer', '')
-            
-            # Decode base64 video if present
+            print("=====",video_data)
+            print("---",student_answer)
+          
             if video_data:
-                # Remove data URL prefix if present
                 if video_data.startswith('data:video/webm;base64,'):
                     video_data = video_data.split(',')[1]
                 
