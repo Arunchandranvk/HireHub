@@ -116,12 +116,14 @@
                                 </button>
                             </div>
                             
-                             <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-
+                                    <a href="{% url 'forgot-password' %}" class="text-sm text-indigo-600 hover:text-indigo-500">Forgot Password?</a>
                                 </div>
-                                <a href="{% url 'com-reg' %}" class="text-sm text-indigo-600 hover:text-indigo-500">Is Company?</a>
-                            </div> 
+                                <div class="space-x-3">
+                                    <a href="{% url 'com-reg' %}" class="text-sm text-indigo-600 hover:text-indigo-500">Is Company?</a>
+                                </div>
+                            </div>
                             <button class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition shadow-lg" type="submit">
                                 Sign In
                             </button>

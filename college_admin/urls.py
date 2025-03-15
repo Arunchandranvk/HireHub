@@ -20,4 +20,6 @@ urlpatterns = [
     path('department/delete/<int:pk>/', DepartmentDeleteView, name='delete-department'),
     path('jobs-lists/<int:pk>/', JobListingsView.as_view(), name='jobs'),
     path('Appliedstudents-lists/<int:pk>/', AppliedStudentsView.as_view(), name='stu-list'),
+    path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
+    path('reset-password/<str:token>/', ResetPasswordView.as_view(), name='reset-password'),
 ]

@@ -11,7 +11,12 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models import Q
-
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.conf import settings
+from django.utils.crypto import get_random_string
 
 def custom_logout(request):
     auth_logout(request)
@@ -316,3 +321,81 @@ class AppliedStudentsView(TemplateView):
         return context
     
    
+
+
+from datetime import timedelta
+
+class ForgotPasswordView(FormView):
+    template_name = "forgot_password.html"
+    form_class = PasswordResetRequestForm
+    
+    def form_valid(self, form):
+        email = form.cleaned_data.get('email')
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+            # Generate token
+            token = get_random_string(length=64)
+            ResetToken.objects.update_or_create(
+                user=user,
+                defaults={
+                    'token': token,
+                    'expires_at': timezone.now() + timedelta(hours=24)
+                }
+            )
+            
+            # Create reset link
+            reset_link = self.request.build_absolute_uri(
+                reverse('reset-password', kwargs={'token': token})
+            )
+            
+            # Send email
+            send_mail(
+                subject='HireHub Password Reset',
+                message=f'Click the link below to reset your password:\n\n{reset_link}\n\nThis link will expire in 24 hours.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(self.request, "Password reset link has been sent to your email.")
+            return redirect('login')
+            
+        except CustomUser.DoesNotExist:
+            messages.success(self.request, "Email is not registered")
+            return redirect('login')
+        
+        return super().form_valid(form)
+
+class ResetPasswordView(FormView):
+    template_name = "reset_password.html"
+    form_class = SetNewPasswordForm
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Validate token
+        self.token = kwargs.get('token')
+        
+        try:
+            self.reset_token = ResetToken.objects.get(
+                token=self.token,
+                expires_at__gt=timezone.now()
+            )
+        except ResetToken.DoesNotExist:
+            messages.error(request, "Invalid or expired password reset link.")
+            return redirect('login')
+            
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        user = self.reset_token.user
+        password = form.cleaned_data.get('password')
+        
+        # Update user password
+        user.set_password(password)
+        user.save()
+        
+        # Remove the used token
+        self.reset_token.delete()
+        
+        messages.success(self.request, "Your password has been updated successfully. You can now login with your new password.")
+        return redirect('login')
