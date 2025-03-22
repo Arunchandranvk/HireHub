@@ -49,9 +49,15 @@ class GroqAssessment:
             )
 
     def evaluate_answer(self, model_answer: str, student_answer: str) -> Tuple[float, str]:
-        print("---------",student_answer)
+        print("---------", student_answer)
+        
+        # Check if student_answer is blank
+        if not student_answer.strip():
+            # Default score and feedback for blank answer
+            return 0.0, "No answer provided. Please ensure your answer is complete."
+        
         prompt = (
-            "Evaluate the student's answer compared to the model answer give score based on the student answer and question , model answer. "
+            "Evaluate the student's answer compared to the model answer. "
             "Provide JSON output with:\n"
             '- "score":0-100,\n'
             '- "detailed_feedback" (string),\n'
@@ -60,7 +66,8 @@ class GroqAssessment:
             '{\n  "score": 80,\n  "detailed_feedback": "Good answer, but missing details on scope.",\n  "missed_concepts": ["variable scope"] \n}'
             f"\n\nModel Answer: {model_answer}\nStudent Answer: {student_answer}"
         )
-        print("prompt",prompt)
+        print("prompt", prompt)
+        
         try:
             completion = self.client.chat.completions.create(
                 model="mixtral-8x7b-32768",
@@ -77,7 +84,13 @@ class GroqAssessment:
             cleaned_response = raw_response.replace("\n", " ").replace("\r", "")
 
             evaluation = json.loads(cleaned_response)
-            print('eee',evaluation)
+            print('eee', evaluation)
+            
+            # Handle missing or malformed responses gracefully
+            if "score" not in evaluation:
+                print("Score missing in evaluation response.")
+                return 0.0, "Evaluation failed. Please try again."
+            
             feedback = f"\nFeedback:\n{evaluation['detailed_feedback']}"
 
             if evaluation.get("missed_concepts"):
@@ -88,7 +101,10 @@ class GroqAssessment:
 
         except json.JSONDecodeError as e:
             print(f"JSON decoding error: {str(e)}\nResponse received: {raw_response}")
-            return evaluate_answer_with_feedback(model_answer, student_answer)
+            # Return default score and feedback in case of JSON decode error
+            return 0.0, "An error occurred during evaluation. Please try again."
+        
         except Exception as e:
             print(f"Error in Groq evaluation: {str(e)}")
-            return evaluate_answer_with_feedback(model_answer, student_answer)
+            # Return default score and feedback for other errors
+            return 0.0, "An error occurred during evaluation. Please try again."
